@@ -14,7 +14,7 @@ import {
   Pie,
   Cell,
 } from "recharts"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Download, Upload } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
@@ -57,6 +57,7 @@ export default function ReportsPage() {
   const [yearSummary, setYearSummary] = useState<YearSummary | null>(null)
   const [recurringPaymentsSummary, setRecurringPaymentsSummary] = useState<RecurringPaymentsSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isRestoring, setIsRestoring] = useState(false)
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
@@ -91,6 +92,61 @@ export default function ReportsPage() {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8']
 
+  const handleBackup = async () => {
+    try {
+      const response = await fetch("/api/database/backup")
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `cashflow_backup_${new Date().toISOString().split("T")[0]}.json`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      }
+    } catch (error) {
+      console.error("Error downloading backup:", error)
+      alert("Error downloading backup")
+    }
+  }
+
+  const handleRestore = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!confirm("This will replace all existing data. Are you sure?")) {
+      event.target.value = ""
+      return
+    }
+
+    try {
+      setIsRestoring(true)
+      const backup = await file.text()
+      const response = await fetch("/api/database/restore", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: backup,
+      })
+
+      if (response.ok) {
+        alert("Database restored successfully")
+        window.location.reload()
+      } else {
+        throw new Error("Failed to restore backup")
+      }
+    } catch (error) {
+      console.error("Error restoring backup:", error)
+      alert("Error restoring backup")
+    } finally {
+      setIsRestoring(false)
+      event.target.value = ""
+    }
+  }
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       {/* Header */}
@@ -106,17 +162,37 @@ export default function ReportsPage() {
           <h1 className="text-3xl sm:text-4xl font-bold">Financial Reports</h1>
           <p className="text-muted-foreground">Detailed analysis of your financial data</p>
         </div>
-        <select
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-          className="rounded-md border border-input bg-background px-3 py-2 min-w-[120px]"
-        >
-          {years.map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleBackup}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Download className="h-4 w-4" />
+            Backup
+          </button>
+          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
+            <Upload className="h-4 w-4" />
+            Restore
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleRestore}
+              className="hidden"
+              disabled={isRestoring}
+            />
+          </label>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            className="rounded-md border border-input bg-background px-3 py-2 min-w-[120px]"
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {isLoading ? (
