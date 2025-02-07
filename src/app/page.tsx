@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { TransactionForm } from "@/components/transaction-form"
+import { DateFilter } from "@/components/date-filter"
+import { Pagination } from "@/components/pagination"
 
 interface Transaction {
   id: number
@@ -17,41 +19,44 @@ interface Account {
   balance: number
 }
 
+interface PaginationData {
+  currentPage: number
+  totalPages: number
+  totalItems: number
+}
+
 export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [account, setAccount] = useState<Account | null>(null)
   const [monthlyIncome, setMonthlyIncome] = useState(0)
   const [monthlyExpenses, setMonthlyExpenses] = useState(0)
+  const [pagination, setPagination] = useState<PaginationData>({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+  })
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
 
-  const fetchData = async () => {
+  const fetchData = async (
+    year = selectedYear,
+    month = selectedMonth,
+    page = pagination.currentPage
+  ) => {
     try {
       const [transactionsRes, accountRes] = await Promise.all([
-        fetch("/api/transactions"),
+        fetch(
+          `/api/transactions?year=${year}&month=${month}&page=${page}&pageSize=10`
+        ),
         fetch("/api/accounts"),
       ])
 
       if (transactionsRes.ok) {
-        const transData = await transactionsRes.json()
-        setTransactions(transData)
-
-        // Calculate monthly totals
-        const now = new Date()
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        const monthlyTransactions = transData.filter(
-          (t: Transaction) => new Date(t.date) >= firstDayOfMonth
-        )
-
-        setMonthlyIncome(
-          monthlyTransactions
-            .filter((t: Transaction) => t.type === "INCOME")
-            .reduce((sum: number, t: Transaction) => sum + t.amount, 0)
-        )
-
-        setMonthlyExpenses(
-          monthlyTransactions
-            .filter((t: Transaction) => t.type === "EXPENSE")
-            .reduce((sum: number, t: Transaction) => sum + t.amount, 0)
-        )
+        const data = await transactionsRes.json()
+        setTransactions(data.transactions)
+        setPagination(data.pagination)
+        setMonthlyIncome(data.monthlyTotals.income)
+        setMonthlyExpenses(data.monthlyTotals.expenses)
       }
 
       if (accountRes.ok) {
@@ -66,6 +71,16 @@ export default function Home() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  const handleDateFilterChange = (year: number, month: number) => {
+    setSelectedYear(year)
+    setSelectedMonth(month)
+    fetchData(year, month, 1) // Reset to first page when changing date filter
+  }
+
+  const handlePageChange = (page: number) => {
+    fetchData(selectedYear, selectedMonth, page)
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-LK", {
@@ -114,7 +129,7 @@ export default function Home() {
               Add Income
             </button>
           }
-          onSuccess={fetchData}
+          onSuccess={() => fetchData()}
         />
         <TransactionForm
           type="EXPENSE"
@@ -123,7 +138,7 @@ export default function Home() {
               Add Expense
             </button>
           }
-          onSuccess={fetchData}
+          onSuccess={() => fetchData()}
         />
         <button className="rounded-lg border bg-primary p-4 text-primary-foreground hover:bg-primary/90">
           Manage Accounts
@@ -135,37 +150,52 @@ export default function Home() {
 
       {/* Recent Transactions */}
       <div className="mt-8">
-        <h2 className="mb-4 text-2xl font-semibold">Recent Transactions</h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-2xl font-semibold">Transactions</h2>
+          <DateFilter onFilterChange={handleDateFilterChange} />
+        </div>
         <div className="rounded-lg border">
           {transactions.length > 0 ? (
-            <div className="divide-y">
-              {transactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-4">
-                  <div>
-                    <p className="font-medium">{transaction.category}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(transaction.date).toLocaleDateString()}
-                    </p>
-                    {transaction.description && (
-                      <p className="text-sm text-muted-foreground">{transaction.description}</p>
-                    )}
-                  </div>
-                  <p
-                    className={
-                      transaction.type === "INCOME"
-                        ? "text-green-600 font-medium"
-                        : "text-red-600 font-medium"
-                    }
+            <>
+              <div className="divide-y">
+                {transactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between p-4"
                   >
-                    {transaction.type === "INCOME" ? "+" : "-"}
-                    {formatCurrency(transaction.amount)}
-                  </p>
-                </div>
-              ))}
-            </div>
+                    <div>
+                      <p className="font-medium">{transaction.category}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(transaction.date).toLocaleDateString()}
+                      </p>
+                      {transaction.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {transaction.description}
+                        </p>
+                      )}
+                    </div>
+                    <p
+                      className={
+                        transaction.type === "INCOME"
+                          ? "text-green-600 font-medium"
+                          : "text-red-600 font-medium"
+                      }
+                    >
+                      {transaction.type === "INCOME" ? "+" : "-"}
+                      {formatCurrency(transaction.amount)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
+              />
+            </>
           ) : (
             <div className="p-4 text-center text-muted-foreground">
-              No transactions yet
+              No transactions for this period
             </div>
           )}
         </div>

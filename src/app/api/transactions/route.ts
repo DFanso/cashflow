@@ -54,19 +54,75 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const year = parseInt(searchParams.get("year") || new Date().getFullYear().toString())
+    const month = parseInt(searchParams.get("month") || new Date().getMonth().toString())
+    const page = parseInt(searchParams.get("page") || "1")
+    const pageSize = parseInt(searchParams.get("pageSize") || "10")
+
+    // Calculate date range for the selected month
+    const startDate = new Date(year, month, 1)
+    const endDate = new Date(year, month + 1, 0)
+
+    // Get total count for pagination
+    const totalCount = await prisma.transaction.count({
+      where: {
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+    })
+
+    // Get paginated transactions
     const transactions = await prisma.transaction.findMany({
+      where: {
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
       orderBy: {
         date: "desc",
       },
-      take: 10,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
       include: {
         account: true,
       },
     })
 
-    return NextResponse.json(transactions)
+    // Calculate monthly totals
+    const monthlyTotals = await prisma.transaction.groupBy({
+      by: ["type"],
+      where: {
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+    })
+
+    const monthlyIncome = monthlyTotals.find(t => t.type === "INCOME")?._sum.amount || 0
+    const monthlyExpenses = monthlyTotals.find(t => t.type === "EXPENSE")?._sum.amount || 0
+
+    return NextResponse.json({
+      transactions,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / pageSize),
+        totalItems: totalCount,
+      },
+      monthlyTotals: {
+        income: monthlyIncome,
+        expenses: monthlyExpenses,
+      },
+    })
   } catch (error) {
     console.error("Error fetching transactions:", error)
     return NextResponse.json(
