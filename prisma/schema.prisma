@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
 }
 
 datasource db {
@@ -19,6 +20,7 @@ model Account {
   updatedAt   DateTime      @updatedAt
   transactions Transaction[]
   debts       Debt[]
+  recurringPayments RecurringPayment[]
 }
 
 model Transaction {
@@ -30,9 +32,26 @@ model Transaction {
   date        DateTime  @default(now())
   account     Account   @relation(fields: [accountId], references: [id])
   accountId   Int
-  isRecurring Boolean   @default(false)
-  frequency   String?   // monthly, weekly, yearly (if recurring)
-  nextDueDate DateTime?
+  recurringPaymentId Int?
+  recurringPayment RecurringPayment? @relation(fields: [recurringPaymentId], references: [id])
+}
+
+model RecurringPayment {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  amount      Float
+  type        TransactionType
+  category    String
+  description String?
+  frequency   RecurringFrequency
+  startDate   DateTime
+  nextDueDate DateTime
+  isActive    Boolean   @default(true)
+  account     Account   @relation(fields: [accountId], references: [id])
+  accountId   Int
+  transactions Transaction[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Debt {
@@ -58,4 +77,11 @@ enum AccountType {
 enum TransactionType {
   INCOME
   EXPENSE
+}
+
+enum RecurringFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
 }

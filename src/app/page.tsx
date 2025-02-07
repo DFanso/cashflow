@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { TransactionForm } from "@/components/transaction-form"
+import { RecurringPaymentForm } from "@/components/recurring-payment-form"
 import { DateFilter } from "@/components/date-filter"
 import { Pagination } from "@/components/pagination"
+import { format, isToday, isTomorrow } from "date-fns"
 
 interface Transaction {
   id: number
@@ -25,6 +27,17 @@ interface PaginationData {
   totalItems: number
 }
 
+interface RecurringPayment {
+  id: number
+  name: string
+  amount: number
+  type: "INCOME" | "EXPENSE"
+  category: string
+  description: string | null
+  frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY"
+  nextDueDate: string
+}
+
 export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [account, setAccount] = useState<Account | null>(null)
@@ -37,6 +50,7 @@ export default function Home() {
   })
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
+  const [upcomingPayments, setUpcomingPayments] = useState<RecurringPayment[]>([])
 
   const fetchData = async (
     year = selectedYear,
@@ -44,11 +58,12 @@ export default function Home() {
     page = pagination.currentPage
   ) => {
     try {
-      const [transactionsRes, accountRes] = await Promise.all([
+      const [transactionsRes, accountRes, upcomingRes] = await Promise.all([
         fetch(
           `/api/transactions?year=${year}&month=${month}&page=${page}&pageSize=10`
         ),
         fetch("/api/accounts"),
+        fetch("/api/recurring-payments"),
       ])
 
       if (transactionsRes.ok) {
@@ -62,6 +77,11 @@ export default function Home() {
       if (accountRes.ok) {
         const accData = await accountRes.json()
         setAccount(accData)
+      }
+
+      if (upcomingRes.ok) {
+        const upcomingData = await upcomingRes.json()
+        setUpcomingPayments(upcomingData)
       }
     } catch (error) {
       console.error("Error fetching data:", error)
@@ -87,6 +107,13 @@ export default function Home() {
       style: "currency",
       currency: "LKR",
     }).format(amount)
+  }
+
+  const formatDueDate = (date: string) => {
+    const dueDate = new Date(date)
+    if (isToday(dueDate)) return "Today"
+    if (isTomorrow(dueDate)) return "Tomorrow"
+    return format(dueDate, "MMM d, yyyy")
   }
 
   return (
@@ -140,9 +167,14 @@ export default function Home() {
           }
           onSuccess={() => fetchData()}
         />
-        <button className="rounded-lg border bg-primary p-4 text-primary-foreground hover:bg-primary/90">
-          Manage Accounts
-        </button>
+        <RecurringPaymentForm
+          trigger={
+            <button className="w-full rounded-lg border bg-primary p-4 text-primary-foreground hover:bg-primary/90">
+              Add Recurring Payment
+            </button>
+          }
+          onSuccess={() => fetchData()}
+        />
         <button className="rounded-lg border bg-primary p-4 text-primary-foreground hover:bg-primary/90">
           View Reports
         </button>
@@ -205,9 +237,45 @@ export default function Home() {
       <div className="mt-8">
         <h2 className="mb-4 text-2xl font-semibold">Upcoming Payments</h2>
         <div className="rounded-lg border">
-          <div className="p-4 text-center text-muted-foreground">
-            No upcoming payments
-          </div>
+          {upcomingPayments.length > 0 ? (
+            <div className="divide-y">
+              {upcomingPayments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="flex items-center justify-between p-4"
+                >
+                  <div>
+                    <p className="font-medium">{payment.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Due: {formatDueDate(payment.nextDueDate)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {payment.frequency.charAt(0) + payment.frequency.slice(1).toLowerCase()}
+                    </p>
+                    {payment.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {payment.description}
+                      </p>
+                    )}
+                  </div>
+                  <p
+                    className={
+                      payment.type === "INCOME"
+                        ? "text-green-600 font-medium"
+                        : "text-red-600 font-medium"
+                    }
+                  >
+                    {payment.type === "INCOME" ? "+" : "-"}
+                    {formatCurrency(payment.amount)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 text-center text-muted-foreground">
+              No upcoming payments
+            </div>
+          )}
         </div>
       </div>
     </div>
