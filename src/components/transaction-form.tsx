@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { TransactionType } from "@prisma/client"
 import { format } from "date-fns"
 import { getCategoriesByType } from "@/lib/categories"
+import { cn } from "@/lib/utils"
 
 interface TransactionFormProps {
   type: TransactionType
@@ -35,7 +36,7 @@ export function TransactionForm({ type, trigger, onSuccess }: TransactionFormPro
         body: JSON.stringify({
           amount: parseFloat(amount),
           type,
-          category,
+          category: category === "custom" ? customCategory : category,
           description,
           date: new Date(date).toISOString(),
         }),
@@ -50,6 +51,7 @@ export function TransactionForm({ type, trigger, onSuccess }: TransactionFormPro
       // Reset form and close dialog
       setAmount("")
       setCategory("")
+      setCustomCategory("")
       setDescription("")
       setDate(format(new Date(), "yyyy-MM-dd"))
       setIsOpen(false)
@@ -61,6 +63,8 @@ export function TransactionForm({ type, trigger, onSuccess }: TransactionFormPro
       setIsSubmitting(false)
     }
   }
+
+  const [customCategory, setCustomCategory] = useState("")
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -102,23 +106,43 @@ export function TransactionForm({ type, trigger, onSuccess }: TransactionFormPro
               required
             >
               <option value="">Select a category</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-              {/* Allow custom category if needed */}
+              {categories.map((cat) => {
+                const Icon = cat.icon
+                return (
+                  <option key={cat.id} value={cat.id} className={cn("flex items-center gap-2", cat.color)}>
+                    {cat.label}
+                  </option>
+                )
+              })}
               <option value="custom">Custom Category...</option>
             </select>
             {category === "custom" && (
               <input
                 type="text"
                 placeholder="Enter custom category"
-                value={category === "custom" ? "" : category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
                 className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2"
                 required
               />
+            )}
+            {/* Display selected category with icon */}
+            {category && category !== "custom" && (
+              <div className="mt-2 flex items-center gap-2">
+                {(() => {
+                  const selectedCategory = categories.find((cat) => cat.id === category)
+                  if (selectedCategory) {
+                    const Icon = selectedCategory.icon
+                    return (
+                      <>
+                        <Icon className={cn("h-4 w-4", selectedCategory.color)} />
+                        <span className={selectedCategory.color}>{selectedCategory.label}</span>
+                      </>
+                    )
+                  }
+                  return null
+                })()}
+              </div>
             )}
           </div>
           <div>

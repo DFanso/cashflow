@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { TransactionType } from "@prisma/client"
 import { getCategoriesByType } from "@/lib/categories"
+import { cn } from "@/lib/utils"
 
 interface RecurringPaymentFormProps {
   trigger: React.ReactNode
@@ -21,6 +22,7 @@ export function RecurringPaymentForm({ trigger, onSuccess }: RecurringPaymentFor
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [isOpen, setIsOpen] = useState(false)
+  const [customCategory, setCustomCategory] = useState("")
 
   const categories = getCategoriesByType(type)
 
@@ -39,7 +41,7 @@ export function RecurringPaymentForm({ trigger, onSuccess }: RecurringPaymentFor
           name,
           amount: parseFloat(amount),
           type,
-          category,
+          category: category === "custom" ? customCategory : category,
           description,
           frequency,
           startDate: new Date(startDate).toISOString(),
@@ -57,6 +59,7 @@ export function RecurringPaymentForm({ trigger, onSuccess }: RecurringPaymentFor
       setAmount("")
       setType("EXPENSE")
       setCategory("")
+      setCustomCategory("")
       setDescription("")
       setFrequency("MONTHLY")
       setStartDate("")
@@ -140,23 +143,43 @@ export function RecurringPaymentForm({ trigger, onSuccess }: RecurringPaymentFor
               required
             >
               <option value="">Select a category</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-              {/* Allow custom category if needed */}
+              {categories.map((cat) => {
+                const Icon = cat.icon
+                return (
+                  <option key={cat.id} value={cat.id} className={cn("flex items-center gap-2", cat.color)}>
+                    {cat.label}
+                  </option>
+                )
+              })}
               <option value="custom">Custom Category...</option>
             </select>
             {category === "custom" && (
               <input
                 type="text"
                 placeholder="Enter custom category"
-                value={category === "custom" ? "" : category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
                 className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2"
                 required
               />
+            )}
+            {/* Display selected category with icon */}
+            {category && category !== "custom" && (
+              <div className="mt-2 flex items-center gap-2">
+                {(() => {
+                  const selectedCategory = categories.find((cat) => cat.id === category)
+                  if (selectedCategory) {
+                    const Icon = selectedCategory.icon
+                    return (
+                      <>
+                        <Icon className={cn("h-4 w-4", selectedCategory.color)} />
+                        <span className={selectedCategory.color}>{selectedCategory.label}</span>
+                      </>
+                    )
+                  }
+                  return null
+                })()}
+              </div>
             )}
           </div>
           <div>
