@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id          Int           @id @default(autoincrement())
+  name        String
+  type        AccountType
+  balance     Float         @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  transactions Transaction[]
+  debts       Debt[]
+}
+
+model Transaction {
+  id          Int       @id @default(autoincrement())
+  amount      Float
+  type        TransactionType
+  category    String
+  description String?
+  date        DateTime  @default(now())
+  account     Account   @relation(fields: [accountId], references: [id])
+  accountId   Int
+  isRecurring Boolean   @default(false)
+  frequency   String?   // monthly, weekly, yearly (if recurring)
+  nextDueDate DateTime?
+}
+
+model Debt {
+  id             Int      @id @default(autoincrement())
+  name           String
+  amount         Float
+  remainingAmount Float
+  dueDate        DateTime
+  description    String?
+  account        Account  @relation(fields: [accountId], references: [id])
+  accountId      Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+enum AccountType {
+  SAVINGS
+  CHECKING
+  CREDIT
+  CASH
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
