@@ -72,100 +72,125 @@ export function TransactionEditForm({ transaction, onSuccess }: TransactionEditF
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <button className="text-muted-foreground hover:text-primary">
+        <button className="text-muted-foreground hover:text-primary transition-colors" title="Edit Transaction">
           <Pencil className="h-4 w-4" />
         </button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Edit Transaction</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="h-5 w-5" />
+            Edit Transaction
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive flex items-center gap-2">
+              <span className="text-destructive">•</span>
               {error}
             </div>
           )}
-          <div>
-            <label htmlFor="amount" className="block text-sm font-medium mb-1">
-              Amount (LKR)
-            </label>
-            <input
-              type="number"
-              id="amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2"
-              required
-              min="0"
-              step="0.01"
-            />
+          
+          {/* Type and Amount Group */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="type" className="block text-sm font-medium mb-1">
+                Type
+              </label>
+              <select
+                id="type"
+                value={type}
+                onChange={(e) => {
+                  setType(e.target.value as TransactionType)
+                  setCategory("") // Reset category when type changes
+                }}
+                className={cn(
+                  "w-full rounded-md border border-input bg-background px-3 py-2",
+                  type === "INCOME" ? "text-green-600" : "text-red-600"
+                )}
+              >
+                <option value="INCOME" className="text-green-600">Income</option>
+                <option value="EXPENSE" className="text-red-600">Expense</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="amount" className="block text-sm font-medium mb-1">
+                Amount (LKR)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  id="amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className={cn(
+                    "w-full rounded-md border border-input bg-background pl-8 pr-3 py-2",
+                    type === "INCOME" ? "text-green-600" : "text-red-600"
+                  )}
+                  required
+                  min="0"
+                  step="0.01"
+                />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  {type === "INCOME" ? "+" : "-"}
+                </span>
+              </div>
+            </div>
           </div>
-          <div>
-            <label htmlFor="type" className="block text-sm font-medium mb-1">
-              Type
-            </label>
-            <select
-              id="type"
-              value={type}
-              onChange={(e) => {
-                setType(e.target.value as TransactionType)
-                setCategory("") // Reset category when type changes
-              }}
-              className="w-full rounded-md border border-input bg-background px-3 py-2"
-            >
-              <option value="EXPENSE">Expense</option>
-              <option value="INCOME">Income</option>
-            </select>
-          </div>
+
+          {/* Category Selection */}
           <div>
             <label htmlFor="category" className="block text-sm font-medium mb-1">
               Category
             </label>
-            <select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2"
-              required
-            >
-              <option value="">Select a category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id} className={cn("flex items-center gap-2", cat.color)}>
-                  {cat.label}
-                </option>
-              ))}
-              <option value="custom">Custom Category...</option>
-            </select>
-            {category === "custom" && (
-              <input
-                type="text"
-                placeholder="Enter custom category"
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2"
+            <div className="space-y-2">
+              <select
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2"
                 required
-              />
-            )}
-            {/* Display selected category with icon */}
-            {category && category !== "custom" && (
-              <div className="mt-2 flex items-center gap-2">
-                {(() => {
-                  const selectedCategory = categories.find((cat) => cat.id === category)
-                  if (selectedCategory) {
-                    const Icon = selectedCategory.icon
-                    return (
-                      <>
-                        <Icon className={cn("h-4 w-4", selectedCategory.color)} />
-                        <span className={selectedCategory.color}>{selectedCategory.label}</span>
-                      </>
-                    )
-                  }
-                  return null
-                })()}
-              </div>
-            )}
+              >
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.label}
+                  </option>
+                ))}
+                <option value="custom">Custom Category...</option>
+              </select>
+              {category === "custom" && (
+                <input
+                  type="text"
+                  placeholder="Enter custom category"
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2"
+                  required
+                />
+              )}
+              {/* Display selected category with icon */}
+              {category && category !== "custom" && (
+                <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                  {(() => {
+                    const selectedCategory = categories.find((cat) => cat.id === category)
+                    if (selectedCategory) {
+                      const Icon = selectedCategory.icon
+                      return (
+                        <>
+                          <Icon className={cn("h-4 w-4", selectedCategory.color)} />
+                          <span className={selectedCategory.color}>{selectedCategory.label}</span>
+                        </>
+                      )
+                    }
+                    return null
+                  })()}
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Date Selection */}
           <div>
             <label htmlFor="date" className="block text-sm font-medium mb-1">
               Date
@@ -180,6 +205,8 @@ export function TransactionEditForm({ transaction, onSuccess }: TransactionEditF
               max={format(new Date(), "yyyy-MM-dd")}
             />
           </div>
+
+          {/* Description */}
           <div>
             <label htmlFor="description" className="block text-sm font-medium mb-1">
               Description
@@ -188,24 +215,41 @@ export function TransactionEditForm({ transaction, onSuccess }: TransactionEditF
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2"
+              placeholder="Add notes about this transaction..."
+              className="w-full rounded-md border border-input bg-background px-3 py-2 min-h-[80px]"
               rows={3}
             />
           </div>
-          <div className="flex justify-end space-x-2">
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
-              className="px-4 py-2 border rounded-md hover:bg-muted"
+              className="px-4 py-2 border rounded-md hover:bg-muted transition-colors"
               onClick={() => setIsOpen(false)}
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
+              className={cn(
+                "px-4 py-2 rounded-md text-primary-foreground transition-colors flex items-center gap-2",
+                type === "INCOME" 
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-red-600 hover:bg-red-700",
+                isSubmitting && "opacity-50 cursor-not-allowed"
+              )}
             >
-              {isSubmitting ? "Updating..." : "Update Transaction"}
+              {isSubmitting ? (
+                <>
+                  <span className="animate-spin">•</span>
+                  Updating...
+                </>
+              ) : (
+                "Update Transaction"
+              )}
             </button>
           </div>
         </form>

@@ -14,7 +14,8 @@ import {
   Wallet, 
   ArrowUpRight, 
   ArrowDownRight,
-  PiggyBank as SavingsIcon
+  PiggyBank as SavingsIcon,
+  BarChart2
 } from "lucide-react"
 import { getCategoriesByType } from "@/lib/categories"
 import { cn } from "@/lib/utils"
@@ -33,6 +34,7 @@ import {
 } from "recharts"
 import { RecurringPaymentEditForm } from "@/components/recurring-payment-edit-form"
 import { TransactionEditForm } from "@/components/transaction-edit-form"
+import Link from "next/link"
 
 interface Transaction {
   id: number
@@ -305,9 +307,12 @@ export default function Home() {
           }
           onSuccess={() => fetchData()}
         />
-        <button className="rounded-lg border bg-primary p-4 text-primary-foreground hover:bg-primary/90">
-          View Reports
-        </button>
+        <Link href="/reports" className="w-full">
+          <button className="w-full rounded-lg border bg-primary p-4 text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-2">
+            <BarChart2 className="h-5 w-5" />
+            View Reports
+          </button>
+        </Link>
       </div>
 
       {/* Charts Section */}
@@ -404,13 +409,20 @@ export default function Home() {
       {/* Recent Transactions */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h2 className="text-2xl font-semibold">Transactions</h2>
+          <div className="space-y-1">
+            <h2 className="text-2xl font-semibold">Transactions</h2>
+            <p className="text-sm text-muted-foreground">
+              {transactions.length > 0 
+                ? `Showing ${transactions.length} of ${pagination.totalItems} transactions`
+                : "No transactions for this period"}
+            </p>
+          </div>
           <DateFilter onFilterChange={handleDateFilterChange} />
         </div>
-        <div className="rounded-lg border overflow-hidden">
+        <div className="rounded-lg border overflow-hidden bg-card">
           {transactions.length > 0 ? (
             <>
-              <div className="bg-muted/50">
+              <div className="bg-muted/50 border-b">
                 <div className="grid grid-cols-[1fr,auto] sm:grid-cols-[1fr,auto,auto] gap-4 p-4 text-sm font-medium text-muted-foreground">
                   <div>Details</div>
                   <div className="text-right hidden sm:block">Amount</div>
@@ -421,24 +433,29 @@ export default function Home() {
                 {transactions.map((transaction) => {
                   const categoryDetails = findCategoryDetails(transaction.category, transaction.type)
                   const Icon = categoryDetails?.icon
+                  const formattedDate = format(new Date(transaction.date), "MMM d, yyyy")
+                  const isToday = format(new Date(transaction.date), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+                  
                   return (
                     <div
                       key={transaction.id}
-                      className="grid grid-cols-[1fr,auto] sm:grid-cols-[1fr,auto,auto] gap-4 p-4 items-center hover:bg-muted/50 transition-colors"
+                      className="grid grid-cols-[1fr,auto] sm:grid-cols-[1fr,auto,auto] gap-4 p-4 items-center hover:bg-muted/50 transition-colors group"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           {Icon && (
-                            <Icon
-                              className={cn(
-                                "h-4 w-4 flex-shrink-0",
-                                categoryDetails?.color ?? (
-                                  transaction.type === "INCOME"
-                                    ? "text-green-500"
-                                    : "text-red-500"
-                                )
-                              )}
-                            />
+                            <div className="bg-muted rounded-md p-1">
+                              <Icon
+                                className={cn(
+                                  "h-4 w-4 flex-shrink-0",
+                                  categoryDetails?.color ?? (
+                                    transaction.type === "INCOME"
+                                      ? "text-green-500"
+                                      : "text-red-500"
+                                  )
+                                )}
+                              />
+                            </div>
                           )}
                           <p className={cn(
                             "font-medium truncate",
@@ -448,7 +465,10 @@ export default function Home() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <span>{new Date(transaction.date).toLocaleDateString()}</span>
+                          <span className="flex items-center gap-1">
+                            {isToday && <span className="w-1 h-1 rounded-full bg-green-500"></span>}
+                            {formattedDate}
+                          </span>
                           {transaction.description && (
                             <>
                               <span>•</span>
@@ -468,7 +488,7 @@ export default function Home() {
                         {transaction.type === "INCOME" ? "+" : "-"}
                         {formatCurrency(transaction.amount)}
                       </p>
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
                         <TransactionEditForm
                           transaction={transaction}
                           onSuccess={() => fetchData(selectedYear, selectedMonth, pagination.currentPage)}
@@ -477,7 +497,7 @@ export default function Home() {
                           title="Delete Transaction"
                           description="Are you sure you want to delete this transaction? This will update your account balance and cannot be undone."
                           trigger={
-                            <button className="text-muted-foreground hover:text-destructive">
+                            <button className="text-muted-foreground hover:text-destructive transition-colors">
                               <Trash2 className="h-4 w-4" />
                             </button>
                           }
@@ -488,7 +508,7 @@ export default function Home() {
                   )
                 })}
               </div>
-              <div className="border-t">
+              <div className="border-t p-2 bg-muted/50">
                 <Pagination
                   currentPage={pagination.currentPage}
                   totalPages={pagination.totalPages}
@@ -497,8 +517,10 @@ export default function Home() {
               </div>
             </>
           ) : (
-            <div className="p-4 text-center text-muted-foreground">
-              No transactions for this period
+            <div className="p-8 text-center text-muted-foreground">
+              <div className="mb-3 text-4xl">📊</div>
+              <p className="mb-2">No transactions for this period</p>
+              <p className="text-sm">Try selecting a different month or add a new transaction</p>
             </div>
           )}
         </div>
