@@ -27,8 +27,7 @@ export default function RootLayout({
         >
           <main className="min-h-screen bg-background">
             <div className="container mx-auto p-4">
-              <div className="flex justify-between items-center mb-8">
-                <h1 className="text-4xl font-bold">Cashflow Tracker</h1>
+              <div className="flex justify-end mb-8">
                 <ThemeToggle />
               </div>
               {children}
