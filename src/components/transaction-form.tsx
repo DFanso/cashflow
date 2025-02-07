@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { TransactionType } from "@prisma/client"
 import { format } from "date-fns"
+import { getCategoriesByType } from "@/lib/categories"
 
 interface TransactionFormProps {
   type: TransactionType
@@ -17,6 +18,8 @@ export function TransactionForm({ type, trigger, onSuccess }: TransactionFormPro
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [isOpen, setIsOpen] = useState(false)
+
+  const categories = getCategoriesByType(type)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -91,14 +94,32 @@ export function TransactionForm({ type, trigger, onSuccess }: TransactionFormPro
             <label htmlFor="category" className="block text-sm font-medium mb-1">
               Category
             </label>
-            <input
-              type="text"
+            <select
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-2"
               required
-            />
+            >
+              <option value="">Select a category</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+              {/* Allow custom category if needed */}
+              <option value="custom">Custom Category...</option>
+            </select>
+            {category === "custom" && (
+              <input
+                type="text"
+                placeholder="Enter custom category"
+                value={category === "custom" ? "" : category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2"
+                required
+              />
+            )}
           </div>
           <div>
             <label htmlFor="date" className="block text-sm font-medium mb-1">
