@@ -143,14 +143,11 @@ export function RecurringPaymentForm({ trigger, onSuccess }: RecurringPaymentFor
               required
             >
               <option value="">Select a category</option>
-              {categories.map((cat) => {
-                const Icon = cat.icon
-                return (
-                  <option key={cat.id} value={cat.id} className={cn("flex items-center gap-2", cat.color)}>
-                    {cat.label}
-                  </option>
-                )
-              })}
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id} className={cn("flex items-center gap-2", cat.color)}>
+                  {cat.label}
+                </option>
+              ))}
               <option value="custom">Custom Category...</option>
             </select>
             {category === "custom" && (

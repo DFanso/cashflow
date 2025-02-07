@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { addDays, addWeeks, addMonths, addYears } from "date-fns"
 import { Prisma } from "@prisma/client"
 
+type RouteSegment = { id: string }
+
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: RouteSegment }
 ) {
   try {
     const id = parseInt(params.id)
@@ -80,8 +82,8 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: RouteSegment }
 ) {
   try {
     const id = parseInt(params.id)

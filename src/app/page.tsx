@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { TransactionForm } from "@/components/transaction-form"
 import { RecurringPaymentForm } from "@/components/recurring-payment-form"
 import { DateFilter } from "@/components/date-filter"
@@ -84,7 +84,7 @@ export default function Home() {
   const [spendingByCategory, setSpendingByCategory] = useState<{ name: string; value: number }[]>([])
   const [monthlyTrend, setMonthlyTrend] = useState<{ date: string; income: number; expenses: number }[]>([])
 
-  const fetchData = async (
+  const fetchData = useCallback(async (
     year = selectedYear,
     month = selectedMonth,
     page = pagination.currentPage
@@ -125,11 +125,11 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching data:", error)
     }
-  }
+  }, [selectedYear, selectedMonth, pagination.currentPage])
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
 
   const handleDateFilterChange = (year: number, month: number) => {
     setSelectedYear(year)
