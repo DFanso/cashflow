@@ -137,6 +137,25 @@ export default function Home() {
     }
   }
 
+  const handleDeleteRecurringPayment = async (id: number) => {
+    try {
+      const response = await fetch(`/api/recurring-payments/${id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to delete recurring payment")
+      }
+
+      // Refresh the data
+      fetchData()
+    } catch (error) {
+      console.error("Error deleting recurring payment:", error)
+      throw error
+    }
+  }
+
   return (
     <div className="container mx-auto p-4">
       <header className="mb-8">
@@ -291,16 +310,28 @@ export default function Home() {
                       </p>
                     )}
                   </div>
-                  <p
-                    className={
-                      payment.type === "INCOME"
-                        ? "text-green-600 font-medium"
-                        : "text-red-600 font-medium"
-                    }
-                  >
-                    {payment.type === "INCOME" ? "+" : "-"}
-                    {formatCurrency(payment.amount)}
-                  </p>
+                  <div className="flex items-center gap-4">
+                    <p
+                      className={
+                        payment.type === "INCOME"
+                          ? "text-green-600 font-medium"
+                          : "text-red-600 font-medium"
+                      }
+                    >
+                      {payment.type === "INCOME" ? "+" : "-"}
+                      {formatCurrency(payment.amount)}
+                    </p>
+                    <DeleteConfirmation
+                      title="Delete Recurring Payment"
+                      description="Are you sure you want to delete this recurring payment? This will prevent future automatic transactions from being created."
+                      trigger={
+                        <button className="text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      }
+                      onConfirm={() => handleDeleteRecurringPayment(payment.id)}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
