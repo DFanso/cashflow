@@ -5,7 +5,9 @@ import { TransactionForm } from "@/components/transaction-form"
 import { RecurringPaymentForm } from "@/components/recurring-payment-form"
 import { DateFilter } from "@/components/date-filter"
 import { Pagination } from "@/components/pagination"
+import { DeleteConfirmation } from "@/components/delete-confirmation"
 import { format, isToday, isTomorrow } from "date-fns"
+import { Trash2 } from "lucide-react"
 
 interface Transaction {
   id: number
@@ -116,6 +118,25 @@ export default function Home() {
     return format(dueDate, "MMM d, yyyy")
   }
 
+  const handleDeleteTransaction = async (id: number) => {
+    try {
+      const response = await fetch(`/api/transactions/${id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to delete transaction")
+      }
+
+      // Refresh the data
+      fetchData(selectedYear, selectedMonth, pagination.currentPage)
+    } catch (error) {
+      console.error("Error deleting transaction:", error)
+      throw error
+    }
+  }
+
   return (
     <div className="container mx-auto p-4">
       <header className="mb-8">
@@ -195,7 +216,7 @@ export default function Home() {
                     key={transaction.id}
                     className="flex items-center justify-between p-4"
                   >
-                    <div>
+                    <div className="flex-grow">
                       <p className="font-medium">{transaction.category}</p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(transaction.date).toLocaleDateString()}
@@ -206,16 +227,28 @@ export default function Home() {
                         </p>
                       )}
                     </div>
-                    <p
-                      className={
-                        transaction.type === "INCOME"
-                          ? "text-green-600 font-medium"
-                          : "text-red-600 font-medium"
-                      }
-                    >
-                      {transaction.type === "INCOME" ? "+" : "-"}
-                      {formatCurrency(transaction.amount)}
-                    </p>
+                    <div className="flex items-center gap-4">
+                      <p
+                        className={
+                          transaction.type === "INCOME"
+                            ? "text-green-600 font-medium"
+                            : "text-red-600 font-medium"
+                        }
+                      >
+                        {transaction.type === "INCOME" ? "+" : "-"}
+                        {formatCurrency(transaction.amount)}
+                      </p>
+                      <DeleteConfirmation
+                        title="Delete Transaction"
+                        description="Are you sure you want to delete this transaction? This will update your account balance and cannot be undone."
+                        trigger={
+                          <button className="text-muted-foreground hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        }
+                        onConfirm={() => handleDeleteTransaction(transaction.id)}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
