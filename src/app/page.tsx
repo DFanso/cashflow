@@ -407,6 +407,13 @@ export default function Home() {
         <div className="rounded-lg border overflow-hidden">
           {transactions.length > 0 ? (
             <>
+              <div className="bg-muted/50">
+                <div className="grid grid-cols-[1fr,auto] sm:grid-cols-[1fr,auto,auto] gap-4 p-4 text-sm font-medium text-muted-foreground">
+                  <div>Details</div>
+                  <div className="text-right hidden sm:block">Amount</div>
+                  <div className="text-right">Actions</div>
+                </div>
+              </div>
               <div className="divide-y">
                 {transactions.map((transaction) => {
                   const categoryDetails = findCategoryDetails(transaction.category, transaction.type)
@@ -414,14 +421,14 @@ export default function Home() {
                   return (
                     <div
                       key={transaction.id}
-                      className="flex items-center justify-between p-4"
+                      className="grid grid-cols-[1fr,auto] sm:grid-cols-[1fr,auto,auto] gap-4 p-4 items-center hover:bg-muted/50 transition-colors"
                     >
-                      <div className="flex-grow">
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           {Icon && (
                             <Icon
                               className={cn(
-                                "h-4 w-4",
+                                "h-4 w-4 flex-shrink-0",
                                 categoryDetails?.color ?? (
                                   transaction.type === "INCOME"
                                     ? "text-green-500"
@@ -431,32 +438,34 @@ export default function Home() {
                             />
                           )}
                           <p className={cn(
-                            "font-medium",
+                            "font-medium truncate",
                             categoryDetails?.color
                           )}>
                             {categoryDetails?.label || transaction.category}
                           </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(transaction.date).toLocaleDateString()}
-                        </p>
-                        {transaction.description && (
-                          <p className="text-sm text-muted-foreground">
-                            {transaction.description}
-                          </p>
-                        )}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                          <span>{new Date(transaction.date).toLocaleDateString()}</span>
+                          {transaction.description && (
+                            <>
+                              <span>•</span>
+                              <span className="truncate">{transaction.description}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <p
-                          className={
-                            transaction.type === "INCOME"
-                              ? "text-green-600 font-medium"
-                              : "text-red-600 font-medium"
-                          }
-                        >
-                          {transaction.type === "INCOME" ? "+" : "-"}
-                          {formatCurrency(transaction.amount)}
-                        </p>
+                      <p
+                        className={cn(
+                          "font-medium tabular-nums",
+                          transaction.type === "INCOME"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        )}
+                      >
+                        {transaction.type === "INCOME" ? "+" : "-"}
+                        {formatCurrency(transaction.amount)}
+                      </p>
+                      <div className="flex justify-end">
                         <DeleteConfirmation
                           title="Delete Transaction"
                           description="Are you sure you want to delete this transaction? This will update your account balance and cannot be undone."
@@ -472,11 +481,13 @@ export default function Home() {
                   )
                 })}
               </div>
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={pagination.totalPages}
-                onPageChange={handlePageChange}
-              />
+              <div className="border-t">
+                <Pagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
             </>
           ) : (
             <div className="p-4 text-center text-muted-foreground">
@@ -491,76 +502,88 @@ export default function Home() {
         <h2 className="text-2xl font-semibold">Upcoming Payments</h2>
         <div className="rounded-lg border overflow-hidden">
           {upcomingPayments.length > 0 ? (
-            <div className="divide-y">
-              {upcomingPayments.map((payment) => {
-                const categoryDetails = findCategoryDetails(payment.category, payment.type)
-                const Icon = categoryDetails?.icon
-                return (
-                  <div
-                    key={payment.id}
-                    className="flex items-center justify-between p-4"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        {Icon && (
-                          <Icon
-                            className={cn(
-                              "h-4 w-4",
-                              categoryDetails?.color ?? (
-                                payment.type === "INCOME"
-                                  ? "text-green-500"
-                                  : "text-red-500"
-                              )
-                            )}
-                          />
-                        )}
-                        <p className="font-medium">{payment.name}</p>
+            <>
+              <div className="bg-muted/50">
+                <div className="grid grid-cols-[1fr,auto,auto] gap-4 p-4 text-sm font-medium text-muted-foreground">
+                  <div>Payment Details</div>
+                  <div className="text-right">Amount</div>
+                  <div className="text-right">Actions</div>
+                </div>
+              </div>
+              <div className="divide-y">
+                {upcomingPayments.map((payment) => {
+                  const categoryDetails = findCategoryDetails(payment.category, payment.type)
+                  const Icon = categoryDetails?.icon
+                  return (
+                    <div
+                      key={payment.id}
+                      className="grid grid-cols-[1fr,auto,auto] gap-4 p-4 items-center hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          {Icon && (
+                            <Icon
+                              className={cn(
+                                "h-4 w-4 flex-shrink-0",
+                                categoryDetails?.color ?? (
+                                  payment.type === "INCOME"
+                                    ? "text-green-500"
+                                    : "text-red-500"
+                                )
+                              )}
+                            />
+                          )}
+                          <p className="font-medium truncate">{payment.name}</p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground mt-1">
+                          <span className={cn(
+                            "truncate",
+                            categoryDetails?.color
+                          )}>
+                            {categoryDetails?.label || payment.category}
+                          </span>
+                          <span>•</span>
+                          <span>Due: {formatDueDate(payment.nextDueDate)}</span>
+                          <span>•</span>
+                          <span>
+                            {payment.frequency.charAt(0) + payment.frequency.slice(1).toLowerCase()}
+                          </span>
+                          {payment.description && (
+                            <>
+                              <span>•</span>
+                              <span className="truncate">{payment.description}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className={cn(
-                          categoryDetails?.color
-                        )}>
-                          {categoryDetails?.label || payment.category}
-                        </span>
-                        •
-                        <span>Due: {formatDueDate(payment.nextDueDate)}</span>
-                        •
-                        <span>
-                          {payment.frequency.charAt(0) + payment.frequency.slice(1).toLowerCase()}
-                        </span>
-                      </div>
-                      {payment.description && (
-                        <p className="text-sm text-muted-foreground">
-                          {payment.description}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4">
                       <p
-                        className={
+                        className={cn(
+                          "font-medium tabular-nums whitespace-nowrap",
                           payment.type === "INCOME"
-                            ? "text-green-600 font-medium"
-                            : "text-red-600 font-medium"
-                        }
+                            ? "text-green-600"
+                            : "text-red-600"
+                        )}
                       >
                         {payment.type === "INCOME" ? "+" : "-"}
                         {formatCurrency(payment.amount)}
                       </p>
-                      <DeleteConfirmation
-                        title="Delete Recurring Payment"
-                        description="Are you sure you want to delete this recurring payment? This will prevent future automatic transactions from being created."
-                        trigger={
-                          <button className="text-muted-foreground hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        }
-                        onConfirm={() => handleDeleteRecurringPayment(payment.id)}
-                      />
+                      <div className="flex justify-end">
+                        <DeleteConfirmation
+                          title="Delete Recurring Payment"
+                          description="Are you sure you want to delete this recurring payment? This will prevent future automatic transactions from being created."
+                          trigger={
+                            <button className="text-muted-foreground hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          }
+                          onConfirm={() => handleDeleteRecurringPayment(payment.id)}
+                        />
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            </>
           ) : (
             <div className="p-4 text-center text-muted-foreground">
               No upcoming payments

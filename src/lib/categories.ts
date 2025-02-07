@@ -24,12 +24,13 @@ import {
   Landmark,
   Heart as HeartCharity,
   HelpCircle,
+  Wifi,
 } from "lucide-react"
 
 export interface Category {
   id: string
   label: string
-  icon: any // Lucide icon component
+  icon: typeof Banknote // Fixed the any type
   color: string
 }
 
@@ -108,6 +109,12 @@ export const EXPENSE_CATEGORIES: Category[] = [
     label: "Utilities",
     icon: Lightbulb,
     color: "text-yellow-500",
+  },
+  {
+    id: "internet",
+    label: "Internet Bill",
+    icon: Wifi,
+    color: "text-blue-400",
   },
   {
     id: "rent",
