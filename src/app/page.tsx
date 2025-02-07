@@ -7,9 +7,30 @@ import { DateFilter } from "@/components/date-filter"
 import { Pagination } from "@/components/pagination"
 import { DeleteConfirmation } from "@/components/delete-confirmation"
 import { format, isToday, isTomorrow } from "date-fns"
-import { Trash2 } from "lucide-react"
+import { 
+  Trash2, 
+  TrendingUp, 
+  TrendingDown, 
+  Wallet, 
+  ArrowUpRight, 
+  ArrowDownRight,
+  PiggyBank as SavingsIcon
+} from "lucide-react"
 import { getCategoriesByType } from "@/lib/categories"
 import { cn } from "@/lib/utils"
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts"
 
 interface Transaction {
   id: number
@@ -55,6 +76,8 @@ export default function Home() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [upcomingPayments, setUpcomingPayments] = useState<RecurringPayment[]>([])
+  const [spendingByCategory, setSpendingByCategory] = useState<{ name: string; value: number }[]>([])
+  const [monthlyTrend, setMonthlyTrend] = useState<{ date: string; income: number; expenses: number }[]>([])
 
   const fetchData = async (
     year = selectedYear,
@@ -62,12 +85,13 @@ export default function Home() {
     page = pagination.currentPage
   ) => {
     try {
-      const [transactionsRes, accountRes, upcomingRes] = await Promise.all([
+      const [transactionsRes, accountRes, upcomingRes, statsRes] = await Promise.all([
         fetch(
           `/api/transactions?year=${year}&month=${month}&page=${page}&pageSize=10`
         ),
         fetch("/api/accounts"),
         fetch("/api/recurring-payments"),
+        fetch(`/api/stats?year=${year}&month=${month}`),
       ])
 
       if (transactionsRes.ok) {
@@ -86,6 +110,12 @@ export default function Home() {
       if (upcomingRes.ok) {
         const upcomingData = await upcomingRes.json()
         setUpcomingPayments(upcomingData)
+      }
+
+      if (statsRes.ok) {
+        const statsData = await statsRes.json()
+        setSpendingByCategory(statsData.spendingByCategory)
+        setMonthlyTrend(statsData.monthlyTrend)
       }
     } catch (error) {
       console.error("Error fetching data:", error)
@@ -163,39 +193,89 @@ export default function Home() {
     return categories.find((cat) => cat.id === categoryId)
   }
 
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8']
+
+  // Custom colors for the pie chart that match our category colors
+  const CHART_COLORS = {
+    income: "#22c55e", // green-600
+    expenses: "#ef4444", // red-600
+    savings: "#3b82f6", // blue-600
+  }
+
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 space-y-8">
       <header className="mb-8">
         <h1 className="text-4xl font-bold">Cashflow Tracker</h1>
         <p className="text-muted-foreground">Manage your finances with ease</p>
       </header>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Quick Stats */}
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold">Total Balance</h2>
-          <p className="mt-2 text-3xl font-bold">
-            {account ? formatCurrency(account.balance) : "LKR 0.00"}
-          </p>
+      {/* Quick Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Balance</p>
+              <h2 className="mt-2 text-2xl lg:text-3xl font-bold">
+                {account ? formatCurrency(account.balance) : "LKR 0.00"}
+              </h2>
+            </div>
+            <Wallet className="h-8 w-8 text-primary" />
+          </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold">Monthly Income</h2>
-          <p className="mt-2 text-3xl font-bold text-green-600">
-            {formatCurrency(monthlyIncome)}
-          </p>
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Monthly Income</p>
+              <h2 className="mt-2 text-2xl lg:text-3xl font-bold text-green-600">
+                {formatCurrency(monthlyIncome)}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                <ArrowUpRight className="inline h-4 w-4 text-green-600" />
+                <span className="ml-1">vs last month</span>
+              </p>
+            </div>
+            <TrendingUp className="h-8 w-8 text-green-600" />
+          </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold">Monthly Expenses</h2>
-          <p className="mt-2 text-3xl font-bold text-red-600">
-            {formatCurrency(monthlyExpenses)}
-          </p>
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Monthly Expenses</p>
+              <h2 className="mt-2 text-2xl lg:text-3xl font-bold text-red-600">
+                {formatCurrency(monthlyExpenses)}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                <ArrowDownRight className="inline h-4 w-4 text-red-600" />
+                <span className="ml-1">vs last month</span>
+              </p>
+            </div>
+            <TrendingDown className="h-8 w-8 text-red-600" />
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Net Savings</p>
+              <h2 className="mt-2 text-2xl lg:text-3xl font-bold text-primary">
+                {formatCurrency(monthlyIncome - monthlyExpenses)}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {monthlyIncome > 0 
+                  ? `${((monthlyIncome - monthlyExpenses) / monthlyIncome * 100).toFixed(1)}% of income`
+                  : "No income"
+                }
+              </p>
+            </div>
+            <SavingsIcon className="h-8 w-8 text-primary" />
+          </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TransactionForm
           type="INCOME"
           trigger={
@@ -227,13 +307,104 @@ export default function Home() {
         </button>
       </div>
 
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Trend Chart */}
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <h3 className="text-lg font-semibold mb-4">Monthly Cash Flow</h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={monthlyTrend}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value) => formatCurrency(value as number)}
+                  contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="income"
+                  stackId="1"
+                  stroke={CHART_COLORS.income}
+                  fill={CHART_COLORS.income}
+                  fillOpacity={0.3}
+                  name="Income"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expenses"
+                  stackId="2"
+                  stroke={CHART_COLORS.expenses}
+                  fill={CHART_COLORS.expenses}
+                  fillOpacity={0.3}
+                  name="Expenses"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="savings"
+                  stackId="3"
+                  stroke={CHART_COLORS.savings}
+                  fill={CHART_COLORS.savings}
+                  fillOpacity={0.3}
+                  name="Savings"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Spending by Category Chart */}
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <h3 className="text-lg font-semibold mb-4">Spending by Category</h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={spendingByCategory}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value, percent }) => 
+                    `${name} (${formatCurrency(value)}, ${(percent * 100).toFixed(0)}%)`
+                  }
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {spendingByCategory.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value) => formatCurrency(value as number)}
+                  contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)' }}
+                />
+                <Legend 
+                  formatter={(value, entry) => {
+                    const payload = entry.payload as { value: number }
+                    return `${value} (${formatCurrency(payload.value)})`
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
       {/* Recent Transactions */}
-      <div className="mt-8">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h2 className="text-2xl font-semibold">Transactions</h2>
           <DateFilter onFilterChange={handleDateFilterChange} />
         </div>
-        <div className="rounded-lg border">
+        <div className="rounded-lg border overflow-hidden">
           {transactions.length > 0 ? (
             <>
               <div className="divide-y">
@@ -316,9 +487,9 @@ export default function Home() {
       </div>
 
       {/* Upcoming Payments */}
-      <div className="mt-8">
-        <h2 className="mb-4 text-2xl font-semibold">Upcoming Payments</h2>
-        <div className="rounded-lg border">
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold">Upcoming Payments</h2>
+        <div className="rounded-lg border overflow-hidden">
           {upcomingPayments.length > 0 ? (
             <div className="divide-y">
               {upcomingPayments.map((payment) => {
