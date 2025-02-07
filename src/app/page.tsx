@@ -8,6 +8,8 @@ import { Pagination } from "@/components/pagination"
 import { DeleteConfirmation } from "@/components/delete-confirmation"
 import { format, isToday, isTomorrow } from "date-fns"
 import { Trash2 } from "lucide-react"
+import { getCategoriesByType } from "@/lib/categories"
+import { cn } from "@/lib/utils"
 
 interface Transaction {
   id: number
@@ -156,6 +158,11 @@ export default function Home() {
     }
   }
 
+  const findCategoryDetails = (categoryId: string, type: "INCOME" | "EXPENSE") => {
+    const categories = getCategoriesByType(type)
+    return categories.find((cat) => cat.id === categoryId)
+  }
+
   return (
     <div className="container mx-auto p-4">
       <header className="mb-8">
@@ -230,46 +237,69 @@ export default function Home() {
           {transactions.length > 0 ? (
             <>
               <div className="divide-y">
-                {transactions.map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between p-4"
-                  >
-                    <div className="flex-grow">
-                      <p className="font-medium">{transaction.category}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(transaction.date).toLocaleDateString()}
-                      </p>
-                      {transaction.description && (
+                {transactions.map((transaction) => {
+                  const categoryDetails = findCategoryDetails(transaction.category, transaction.type)
+                  const Icon = categoryDetails?.icon
+                  return (
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between p-4"
+                    >
+                      <div className="flex-grow">
+                        <div className="flex items-center gap-2">
+                          {Icon && (
+                            <Icon
+                              className={cn(
+                                "h-4 w-4",
+                                categoryDetails?.color ?? (
+                                  transaction.type === "INCOME"
+                                    ? "text-green-500"
+                                    : "text-red-500"
+                                )
+                              )}
+                            />
+                          )}
+                          <p className={cn(
+                            "font-medium",
+                            categoryDetails?.color
+                          )}>
+                            {categoryDetails?.label || transaction.category}
+                          </p>
+                        </div>
                         <p className="text-sm text-muted-foreground">
-                          {transaction.description}
+                          {new Date(transaction.date).toLocaleDateString()}
                         </p>
-                      )}
+                        {transaction.description && (
+                          <p className="text-sm text-muted-foreground">
+                            {transaction.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <p
+                          className={
+                            transaction.type === "INCOME"
+                              ? "text-green-600 font-medium"
+                              : "text-red-600 font-medium"
+                          }
+                        >
+                          {transaction.type === "INCOME" ? "+" : "-"}
+                          {formatCurrency(transaction.amount)}
+                        </p>
+                        <DeleteConfirmation
+                          title="Delete Transaction"
+                          description="Are you sure you want to delete this transaction? This will update your account balance and cannot be undone."
+                          trigger={
+                            <button className="text-muted-foreground hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          }
+                          onConfirm={() => handleDeleteTransaction(transaction.id)}
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <p
-                        className={
-                          transaction.type === "INCOME"
-                            ? "text-green-600 font-medium"
-                            : "text-red-600 font-medium"
-                        }
-                      >
-                        {transaction.type === "INCOME" ? "+" : "-"}
-                        {formatCurrency(transaction.amount)}
-                      </p>
-                      <DeleteConfirmation
-                        title="Delete Transaction"
-                        description="Are you sure you want to delete this transaction? This will update your account balance and cannot be undone."
-                        trigger={
-                          <button className="text-muted-foreground hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        }
-                        onConfirm={() => handleDeleteTransaction(transaction.id)}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
               <Pagination
                 currentPage={pagination.currentPage}
@@ -291,49 +321,74 @@ export default function Home() {
         <div className="rounded-lg border">
           {upcomingPayments.length > 0 ? (
             <div className="divide-y">
-              {upcomingPayments.map((payment) => (
-                <div
-                  key={payment.id}
-                  className="flex items-center justify-between p-4"
-                >
-                  <div>
-                    <p className="font-medium">{payment.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Due: {formatDueDate(payment.nextDueDate)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {payment.frequency.charAt(0) + payment.frequency.slice(1).toLowerCase()}
-                    </p>
-                    {payment.description && (
-                      <p className="text-sm text-muted-foreground">
-                        {payment.description}
+              {upcomingPayments.map((payment) => {
+                const categoryDetails = findCategoryDetails(payment.category, payment.type)
+                const Icon = categoryDetails?.icon
+                return (
+                  <div
+                    key={payment.id}
+                    className="flex items-center justify-between p-4"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        {Icon && (
+                          <Icon
+                            className={cn(
+                              "h-4 w-4",
+                              categoryDetails?.color ?? (
+                                payment.type === "INCOME"
+                                  ? "text-green-500"
+                                  : "text-red-500"
+                              )
+                            )}
+                          />
+                        )}
+                        <p className="font-medium">{payment.name}</p>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className={cn(
+                          categoryDetails?.color
+                        )}>
+                          {categoryDetails?.label || payment.category}
+                        </span>
+                        •
+                        <span>Due: {formatDueDate(payment.nextDueDate)}</span>
+                        •
+                        <span>
+                          {payment.frequency.charAt(0) + payment.frequency.slice(1).toLowerCase()}
+                        </span>
+                      </div>
+                      {payment.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {payment.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <p
+                        className={
+                          payment.type === "INCOME"
+                            ? "text-green-600 font-medium"
+                            : "text-red-600 font-medium"
+                        }
+                      >
+                        {payment.type === "INCOME" ? "+" : "-"}
+                        {formatCurrency(payment.amount)}
                       </p>
-                    )}
+                      <DeleteConfirmation
+                        title="Delete Recurring Payment"
+                        description="Are you sure you want to delete this recurring payment? This will prevent future automatic transactions from being created."
+                        trigger={
+                          <button className="text-muted-foreground hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        }
+                        onConfirm={() => handleDeleteRecurringPayment(payment.id)}
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <p
-                      className={
-                        payment.type === "INCOME"
-                          ? "text-green-600 font-medium"
-                          : "text-red-600 font-medium"
-                      }
-                    >
-                      {payment.type === "INCOME" ? "+" : "-"}
-                      {formatCurrency(payment.amount)}
-                    </p>
-                    <DeleteConfirmation
-                      title="Delete Recurring Payment"
-                      description="Are you sure you want to delete this recurring payment? This will prevent future automatic transactions from being created."
-                      trigger={
-                        <button className="text-muted-foreground hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      }
-                      onConfirm={() => handleDeleteRecurringPayment(payment.id)}
-                    />
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className="p-4 text-center text-muted-foreground">
