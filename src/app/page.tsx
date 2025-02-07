@@ -32,6 +32,7 @@ import {
   Legend,
 } from "recharts"
 import { RecurringPaymentEditForm } from "@/components/recurring-payment-edit-form"
+import { TransactionEditForm } from "@/components/transaction-edit-form"
 
 interface Transaction {
   id: number
@@ -467,7 +468,11 @@ export default function Home() {
                         {transaction.type === "INCOME" ? "+" : "-"}
                         {formatCurrency(transaction.amount)}
                       </p>
-                      <div className="flex justify-end">
+                      <div className="flex justify-end gap-2">
+                        <TransactionEditForm
+                          transaction={transaction}
+                          onSuccess={() => fetchData(selectedYear, selectedMonth, pagination.currentPage)}
+                        />
                         <DeleteConfirmation
                           title="Delete Transaction"
                           description="Are you sure you want to delete this transaction? This will update your account balance and cannot be undone."
