@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cashflow Tracker
+
+A modern web application for tracking personal finances, built with Next.js, Prisma, and TypeScript.
+
+## Features
+
+- 💰 **Transaction Management**
+  - Track income and expenses
+  - Categorize transactions
+  - Add descriptions and dates
+  - Edit or delete transactions
+
+- 🔄 **Recurring Payments**
+  - Set up automatic recurring transactions
+  - Support for daily, weekly, monthly, and yearly frequencies
+  - Track recurring income and expenses
+
+- 📊 **Financial Reports**
+  - Year-over-year analysis
+  - Monthly trend charts
+  - Category-wise breakdowns
+  - Income and expense distribution
+  - Savings rate calculation
+
+- 💾 **Data Management**
+  - Backup your financial data
+  - Restore from backup files
+  - Safe transaction handling
+
+- 🎨 **Modern UI/UX**
+  - Responsive design
+  - Dark mode support
+  - Interactive charts
+  - Clean and intuitive interface
+
+## Tech Stack
+
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Database**: SQLite with Prisma ORM
+- **UI Components**: shadcn/ui
+- **Styling**: Tailwind CSS
+- **Charts**: Recharts
+- **Icons**: Lucide Icons
+- **Package Manager**: pnpm
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 18 or later
+- pnpm (recommended) or npm
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/dfanso/cashflow.git
+   cd cashflow
+   ```
+
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
+
+3. Set up the database:
+   ```bash
+   pnpm prisma generate
+   pnpm prisma db push
+   pnpm prisma db seed
+   ```
+
+4. Start the development server:
+   ```bash
+   pnpm dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Database Management
+
+### Backup
+
+1. Navigate to the Reports page
+2. Click the "Backup" button
+3. Save the generated JSON file
+
+### Restore
+
+1. Navigate to the Reports page
+2. Click "Restore"
+3. Select your backup JSON file
+4. Confirm the restore operation
+
+## Project Structure
+
+```
+cashflow/
+├── prisma/                # Database schema and migrations
+├── public/               # Static files
+├── src/
+│   ├── app/             # Next.js app router pages
+│   ├── components/      # React components
+│   ├── lib/             # Utility functions and shared logic
+│   └── styles/          # Global styles
+├── .env                 # Environment variables
+└── package.json         # Project dependencies
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Contributing
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## License
 
-## Learn More
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-To learn more about Next.js, take a look at the following resources:
+## Acknowledgments
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js](https://nextjs.org/)
+- [Prisma](https://www.prisma.io/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Recharts](https://recharts.org/)
