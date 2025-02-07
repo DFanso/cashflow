@@ -25,6 +25,7 @@ import {
   Heart as HeartCharity,
   HelpCircle,
   Wifi,
+  Dumbbell,
 } from "lucide-react"
 
 export interface Category {
@@ -193,6 +194,12 @@ export const EXPENSE_CATEGORIES: Category[] = [
     label: "Other Expenses",
     icon: HelpCircle,
     color: "text-gray-500",
+  },
+  {
+    id: "gym",
+    label: "Gym & Fitness",
+    icon: Dumbbell,
+    color: "text-purple-400",
   },
 ]
 

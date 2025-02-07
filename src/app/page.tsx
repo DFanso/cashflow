@@ -31,6 +31,7 @@ import {
   Cell,
   Legend,
 } from "recharts"
+import { RecurringPaymentEditForm } from "@/components/recurring-payment-edit-form"
 
 interface Transaction {
   id: number
@@ -61,6 +62,7 @@ interface RecurringPayment {
   description: string | null
   frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY"
   nextDueDate: string
+  startDate: string
 }
 
 export default function Home() {
@@ -143,7 +145,7 @@ export default function Home() {
     }).format(amount)
   }
 
-  const formatDueDate = (date: string) => {
+  const formatDueDate = (date: string | number) => {
     const dueDate = new Date(date)
     if (isToday(dueDate)) return "Today"
     if (isTomorrow(dueDate)) return "Tomorrow"
@@ -543,7 +545,9 @@ export default function Home() {
                             {categoryDetails?.label || payment.category}
                           </span>
                           <span>•</span>
-                          <span>Due: {formatDueDate(payment.nextDueDate)}</span>
+                          <span className="font-medium">
+                            Due: {formatDueDate(payment.nextDueDate)}
+                          </span>
                           <span>•</span>
                           <span>
                             {payment.frequency.charAt(0) + payment.frequency.slice(1).toLowerCase()}
@@ -567,7 +571,11 @@ export default function Home() {
                         {payment.type === "INCOME" ? "+" : "-"}
                         {formatCurrency(payment.amount)}
                       </p>
-                      <div className="flex justify-end">
+                      <div className="flex justify-end gap-2">
+                        <RecurringPaymentEditForm
+                          payment={payment}
+                          onSuccess={() => fetchData()}
+                        />
                         <DeleteConfirmation
                           title="Delete Recurring Payment"
                           description="Are you sure you want to delete this recurring payment? This will prevent future automatic transactions from being created."

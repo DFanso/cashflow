@@ -87,37 +87,30 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     const now = new Date()
-    const thirtyDaysFromNow = addDays(now, 30)
 
-    try {
-      // Get upcoming payments for the next 30 days
-      const upcomingPayments = await prisma.recurringPayment.findMany({
-        where: {
-          isActive: true,
-          nextDueDate: {
-            gte: now,
-            lte: thirtyDaysFromNow,
-          },
-        },
-        orderBy: {
-          nextDueDate: "asc",
-        },
-      })
+    // Get all active recurring payments
+    const upcomingPayments = await prisma.recurringPayment.findMany({
+      where: {
+        isActive: true,
+        nextDueDate: {
+          gte: now, // Only show future payments
+        }
+      },
+      orderBy: {
+        nextDueDate: 'asc',
+      },
+      take: 10, // Limit to 10 upcoming payments
+    })
 
-      return NextResponse.json(upcomingPayments)
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        return NextResponse.json(
-          { error: "Database error. Please ensure migrations are run." },
-          { status: 500 }
-        )
-      }
-      throw e
-    }
+    // Log for debugging
+    console.log('Current date:', now.toISOString())
+    console.log('Upcoming payments:', upcomingPayments)
+
+    return NextResponse.json(upcomingPayments)
   } catch (error) {
     console.error("Error fetching upcoming payments:", error)
     return NextResponse.json(
-      { error: "Error fetching upcoming payments. Please try again later." },
+      { error: "Error fetching upcoming payments" },
       { status: 500 }
     )
   }
