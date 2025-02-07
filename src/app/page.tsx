@@ -375,13 +375,11 @@ export default function Home() {
                   data={spendingByCategory}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, value, percent }) => 
-                    `${name} (${formatCurrency(value)}, ${(percent * 100).toFixed(0)}%)`
-                  }
-                  outerRadius={100}
+                  labelLine={true}
+                  outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
+                  label={({ name }) => `${name}`}
                 >
                   {spendingByCategory.map((entry, index) => (
                     <Cell 
@@ -399,6 +397,10 @@ export default function Home() {
                     const payload = entry.payload as { value: number }
                     return `${value} (${formatCurrency(payload.value)})`
                   }}
+                  layout="vertical"
+                  align="right"
+                  verticalAlign="middle"
+                  wrapperStyle={{ fontSize: 12, paddingLeft: '10px' }}
                 />
               </PieChart>
             </ResponsiveContainer>
