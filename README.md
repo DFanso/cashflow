@@ -37,7 +37,7 @@ A modern web application for tracking personal finances, built with Next.js, Pri
 
 - **Framework**: Next.js 14 with App Router
 - **Language**: TypeScript
-- **Database**: SQLite with Prisma ORM
+- **Database**: Postgress with Prisma ORM
 - **UI Components**: shadcn/ui
 - **Styling**: Tailwind CSS
 - **Charts**: Recharts
