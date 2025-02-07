@@ -5,17 +5,21 @@ import { TransactionType } from "@prisma/client"
 interface TransactionFormProps {
   type: TransactionType
   trigger: React.ReactNode
+  onSuccess?: () => void
 }
 
-export function TransactionForm({ type, trigger }: TransactionFormProps) {
+export function TransactionForm({ type, trigger, onSuccess }: TransactionFormProps) {
   const [amount, setAmount] = useState("")
   const [category, setCategory] = useState("")
   const [description, setDescription] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState("")
+  const [isOpen, setIsOpen] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setError("")
 
     try {
       const response = await fetch("/api/transactions", {
@@ -31,29 +35,39 @@ export function TransactionForm({ type, trigger }: TransactionFormProps) {
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error("Failed to add transaction")
+        throw new Error(data.error || "Failed to add transaction")
       }
 
-      // Reset form
+      // Reset form and close dialog
       setAmount("")
       setCategory("")
       setDescription("")
+      setIsOpen(false)
+      onSuccess?.()
     } catch (error) {
       console.error("Error adding transaction:", error)
+      setError(error instanceof Error ? error.message : "Failed to add transaction")
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add {type === "INCOME" ? "Income" : "Expense"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
           <div>
             <label htmlFor="amount" className="block text-sm font-medium mb-1">
               Amount (LKR)
@@ -98,11 +112,7 @@ export function TransactionForm({ type, trigger }: TransactionFormProps) {
             <button
               type="button"
               className="px-4 py-2 border rounded-md hover:bg-muted"
-              onClick={() => {
-                setAmount("")
-                setCategory("")
-                setDescription("")
-              }}
+              onClick={() => setIsOpen(false)}
             >
               Cancel
             </button>
