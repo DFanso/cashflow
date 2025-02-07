@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { TransactionType } from "@prisma/client"
+import { format } from "date-fns"
 
 interface TransactionFormProps {
   type: TransactionType
@@ -12,6 +13,7 @@ export function TransactionForm({ type, trigger, onSuccess }: TransactionFormPro
   const [amount, setAmount] = useState("")
   const [category, setCategory] = useState("")
   const [description, setDescription] = useState("")
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"))
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [isOpen, setIsOpen] = useState(false)
@@ -32,6 +34,7 @@ export function TransactionForm({ type, trigger, onSuccess }: TransactionFormPro
           type,
           category,
           description,
+          date: new Date(date).toISOString(),
         }),
       })
 
@@ -45,6 +48,7 @@ export function TransactionForm({ type, trigger, onSuccess }: TransactionFormPro
       setAmount("")
       setCategory("")
       setDescription("")
+      setDate(format(new Date(), "yyyy-MM-dd"))
       setIsOpen(false)
       onSuccess?.()
     } catch (error) {
@@ -94,6 +98,20 @@ export function TransactionForm({ type, trigger, onSuccess }: TransactionFormPro
               onChange={(e) => setCategory(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-2"
               required
+            />
+          </div>
+          <div>
+            <label htmlFor="date" className="block text-sm font-medium mb-1">
+              Date
+            </label>
+            <input
+              type="date"
+              id="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2"
+              required
+              max={format(new Date(), "yyyy-MM-dd")}
             />
           </div>
           <div>

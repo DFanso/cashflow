@@ -4,17 +4,17 @@ import { prisma } from "@/lib/db"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { amount, type, category, description } = body
+    const { amount, type, category, description, date } = body
 
     // Validate the input
-    if (!amount || !type || !category) {
+    if (!amount || !type || !category || !date) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       )
     }
 
-    // Get the default account (id: 1)
+    // Get the default account
     const account = await prisma.account.findFirst()
     if (!account) {
       return NextResponse.json(
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
         type,
         category,
         description,
+        date: new Date(date),
         accountId: account.id,
       },
     })
