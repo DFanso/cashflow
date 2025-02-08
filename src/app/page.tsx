@@ -83,6 +83,7 @@ export default function Home() {
   const [upcomingPayments, setUpcomingPayments] = useState<RecurringPayment[]>([])
   const [spendingByCategory, setSpendingByCategory] = useState<{ name: string; value: number }[]>([])
   const [monthlyTrend, setMonthlyTrend] = useState<{ date: string; income: number; expenses: number }[]>([])
+  const [data, setData] = useState<any>(null)
 
   const fetchData = useCallback(async (
     year = selectedYear,
@@ -105,6 +106,7 @@ export default function Home() {
         setPagination(data.pagination)
         setMonthlyIncome(data.monthlyTotals.income)
         setMonthlyExpenses(data.monthlyTotals.expenses)
+        setData(data)
       }
 
       if (accountRes.ok) {
@@ -221,7 +223,7 @@ export default function Home() {
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Balance</p>
               <h2 className="mt-2 text-2xl lg:text-3xl font-bold">
-                {account ? formatCurrency(account.balance) : "LKR 0.00"}
+                {data?.account ? formatCurrency(data.account.balance) : "LKR 0.00"}
               </h2>
             </div>
             <Wallet className="h-8 w-8 text-primary" />
@@ -263,13 +265,13 @@ export default function Home() {
         <div className="rounded-lg border bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Net Savings</p>
+              <p className="text-sm font-medium text-muted-foreground">Savings</p>
               <h2 className="mt-2 text-2xl lg:text-3xl font-bold text-primary">
-                {formatCurrency(monthlyIncome - monthlyExpenses)}
+                {formatCurrency(data?.monthlyTotals?.savings || 0)}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {monthlyIncome > 0 
-                  ? `${((monthlyIncome - monthlyExpenses) / monthlyIncome * 100).toFixed(1)}% of income`
+                  ? `${data?.monthlyTotals?.savingsRate || 0}% of income`
                   : "No income"
                 }
               </p>

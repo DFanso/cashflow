@@ -95,22 +95,47 @@ export async function GET(request: Request) {
       },
     })
 
-    // Calculate monthly totals
+    // Calculate monthly totals with category breakdown
     const monthlyTotals = await prisma.transaction.groupBy({
-      by: ["type"],
+      by: ["type", "category"],
       where: {
         date: {
           gte: startDate,
           lte: endDate,
-        },
+        }
       },
       _sum: {
         amount: true,
       },
     })
 
-    const monthlyIncome = monthlyTotals.find(t => t.type === "INCOME")?._sum.amount || 0
-    const monthlyExpenses = monthlyTotals.find(t => t.type === "EXPENSE")?._sum.amount || 0
+    // Calculate income and expenses
+    const incomeByCategory = monthlyTotals
+      .filter(t => t.type === "INCOME")
+      .reduce((acc, curr) => {
+        acc[curr.category] = curr._sum.amount || 0;
+        return acc;
+      }, {} as Record<string, number>);
+
+    const expensesByCategory = monthlyTotals
+      .filter(t => t.type === "EXPENSE" && t.category !== "savings")
+      .reduce((acc, curr) => {
+        acc[curr.category] = curr._sum.amount || 0;
+        return acc;
+      }, {} as Record<string, number>);
+
+    const savings = monthlyTotals
+      .find(t => t.type === "EXPENSE" && t.category === "savings")?._sum.amount || 0;
+
+    const monthlyIncome = Object.values(incomeByCategory).reduce((a, b) => a + b, 0);
+    const monthlyExpenses = Object.values(expensesByCategory).reduce((a, b) => a + b, 0);
+
+    // Get the latest account balance
+    const account = await prisma.account.findFirst({
+      orderBy: {
+        updatedAt: 'desc'
+      }
+    });
 
     return NextResponse.json({
       transactions,
@@ -119,9 +144,17 @@ export async function GET(request: Request) {
         totalPages: Math.ceil(totalCount / pageSize),
         totalItems: totalCount,
       },
+      account,
       monthlyTotals: {
         income: monthlyIncome,
         expenses: monthlyExpenses,
+        savings: savings,
+        incomeByCategory,
+        expensesByCategory,
+        netSavings: savings, // Only show the savings amount
+        savingsRate: monthlyIncome > 0 
+          ? (savings / monthlyIncome * 100).toFixed(1)
+          : 0
       },
     })
   } catch (error) {
