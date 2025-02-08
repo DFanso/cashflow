@@ -68,9 +68,26 @@ interface RecurringPayment {
   startDate: string
 }
 
+interface MonthlyTotals {
+  income: number
+  expenses: number
+  savings: number
+  incomeByCategory: Record<string, number>
+  expensesByCategory: Record<string, number>
+  netSavings: number
+  savingsRate: string
+}
+
+interface ApiResponse {
+  transactions: Transaction[]
+  pagination: PaginationData
+  account: Account
+  monthlyTotals: MonthlyTotals
+}
+
 export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [account, setAccount] = useState<Account | null>(null)
+  const [, setAccount] = useState<Account | null>(null)
   const [monthlyIncome, setMonthlyIncome] = useState(0)
   const [monthlyExpenses, setMonthlyExpenses] = useState(0)
   const [pagination, setPagination] = useState<PaginationData>({
@@ -83,7 +100,7 @@ export default function Home() {
   const [upcomingPayments, setUpcomingPayments] = useState<RecurringPayment[]>([])
   const [spendingByCategory, setSpendingByCategory] = useState<{ name: string; value: number }[]>([])
   const [monthlyTrend, setMonthlyTrend] = useState<{ date: string; income: number; expenses: number }[]>([])
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<ApiResponse | null>(null)
 
   const fetchData = useCallback(async (
     year = selectedYear,
